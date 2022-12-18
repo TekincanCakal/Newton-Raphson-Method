@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <title>Newton-Raphson Method</title>
+</head>
+
+<body>
+    <div class="container my-5">
+        <form class="card shadow-lg mb-3" onsubmit="event.preventDefault();onSubmit();">
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label for="minX1" class="form-label fw-bold">Graph Min X</label>
+                        <input type="number" class="form-control" id="minX1" value="-10" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="minX1" class="form-label fw-bold">Graph Max X</label>
+                        <input type="number" class="form-control" id="maxX2" value="10" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="startPointXInput" class="form-label fw-bold">Initial Point X Value</label>
+                        <input type="number" class="form-control" id="startPointXInput" value="5" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="startPointXInput" class="form-label fw-bold">h Value (10^value)</label>
+                        <input type="number" class="form-control" id="hPoint" value="-6" required>
+                    </div>
+
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" id="funcationInput"
+                            placeholder="Enter a funcation (example: (x*x)+2)" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-success w-100 h-100" type="submit" id="drawButton">Draw</button>
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-danger w-100 h-100" onclick="clearGraph()" disabled="true"
+                            id="clearButton" type="button">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <div class="row d-flex justify-content-center">
+            <div class="col">
+                <div class="card shadow-lg">
+                    <div class="card-body">
+                        <div id="drawCanvas" style="height: 800px;">
+
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <span class="h3" id="currentXPointLabel"></span>
+                        <span class="h3" id="iterationCountLabel"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.2/jquery.min.js"
+        integrity="sha512-tWHlutFnuG0C6nQRlpvrEhE4QpkG1nn2MOUMWmUeRePl4e3Aki0VB6W1v3oLjFtd0hVOtRQ9PHpSfN6u6/QXkQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="./js/ResizeSensor.js"></script>
+    <script src="./js/ElementQueries.js"></script>
+    <script src="./js/p5.min.js"></script>
+    <script>
+        function drawAxes() {
+            stroke("black");
+            strokeWeight(1);
+            axesY = map(0, x1, x2, 0, width - 1);
+            line(axesY, 0, axesY, height - 1);
+            axesX = map(0, y1, y2, height - 1, 0);
+            line(0, axesX, width - 1, axesX);
+        }
+        function drawGraph() {
+            stroke("blue");
+            strokeWeight(3);
+            for (let i = 0; i < values.length - 1; i++) {
+                let x = values[i].x;
+                let y = values[i].y;
+
+                let screenX = map(x, x1, x2, 0, width - 1);
+                let screenY = map(y, y1, y2, height - 1, 0);
+
+                let xNext = values[i + 1].x;
+                let yNext = values[i + 1].y;
+
+                let screenXNext = map(xNext, x1, x2, 0, width - 1);
+                let screenYNext = map(yNext, y1, y2, height - 1, 0);
+
+                line(screenX, screenY, screenXNext, screenYNext);
+            }
+        }
+        function drawDerativeLine() {
+            if (!isFinish) {
+                nextPointX = currentPointX - (fn(currentPointX) / fder(currentPointX))
+                let currentPointY = fn(currentPointX)
+
+                let currentPointScreenX = map(currentPointX, x1, x2, 0, width - 1);
+                let nextPointScreenX = map(nextPointX, x1, x2, 0, width - 1);
+
+                let currentPointScreenY = map(currentPointY, y1, y2, height - 1, 0);
+                stroke("red");
+                strokeWeight(4);
+                line(currentPointScreenX, currentPointScreenY, nextPointScreenX, axesX);
+                currentPointX = nextPointX
+                iteration += 1
+            }
+            $("#currentXPointLabel").text("Current X Point: " + currentPointX)
+            $("#iterationCountLabel").text("Iteration Count: " + iteration)
+            if (fn(currentPointX) < h) {
+                isFinish = true
+            }
+        }
+        function getFunctionValues(fn, x1, x2, n) {
+            let ar = [];
+            let min = Infinity;
+            let max = -Infinity;
+            let step = (x2 - x1) / n;
+            for (let x = x1; x <= x2; x += step) {
+                let y = fn(x);
+                ar.push({ x, y });
+                if (y < min) {
+                    min = y;
+                }
+                if (y > max) {
+                    max = y;
+                }
+            }
+            return { values: ar, min, max };
+        }
+        function onSubmit() {
+            try {
+                $("#drawButton").prop('disabled', true)
+                let funcationString = $("#funcationInput").val()
+                fn = eval("(function(x) {return " + funcationString + "})");
+                currentPointX = parseInt($("#startPointXInput").val())
+                x1 = parseInt($("#minX1").val())
+                x2 = parseInt($("#maxX2").val())
+                h = Math.pow(10, parseInt($("#hPoint").val()))
+                let o = getFunctionValues(fn, x1, x2, 1000);
+                values = o.values;
+                y1 = o.min;
+                y2 = o.max;
+                iteration = 0;
+                isSetted = true
+                $("#clearButton").prop('disabled', false)
+            }
+            catch (ex) {
+                alert(ex.message)
+                $("#drawButton").prop('disabled', false)
+                $("#clearButton").prop('disabled', true)
+            }
+        }
+        function clearGraph() {
+            iteration = 0;
+            isSetted = false
+            isFinish = false
+            $("#currentXPointLabel").text("")
+            $("#iterationCountLabel").text("")
+            $("#drawButton").prop('disabled', false)
+            $("#clearButton").prop('disabled', true)
+        }
+        var fder = x => (fn(x + h) - fn(x)) / h
+        var axesX;
+        var axesY;
+        var h;
+        var x1;
+        var x2;
+        var fn;
+        var y1;
+        var y2;
+        var currentPointX;
+        var values;
+        var iteration;
+        var isSetted = false
+        var isFinish = false
+        function setup() {
+            let canvasDiv = document.getElementById("drawCanvas");
+            var myCanvas = createCanvas(canvasDiv.offsetWidth, canvasDiv.offsetHeight);
+            myCanvas.parent("drawCanvas");
+            frameRate(1)
+            new ResizeSensor($('#drawCanvas'), function () {
+                let canvasDiv = document.getElementById("drawCanvas");
+                resizeCanvas(canvasDiv.offsetWidth, canvasDiv.offsetHeight);
+            });
+        }
+        function draw() {
+            background("white")
+            if (isSetted) {
+                drawAxes();
+                drawGraph();
+                drawDerativeLine()
+            }
+        }
+    </script>
+</body>
+
+</html>
