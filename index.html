@@ -32,7 +32,7 @@
                     </div>
 
                 </div>
-                <div class="row mb-3">
+                <div class="row mb-3 g-3">
                     <div class="col-md-6">
                         <input type="text" class="form-control" id="funcationInput"
                             placeholder="Enter a funcation (example: (x*x)+2)" required>
@@ -42,7 +42,7 @@
                     </div>
                     <div class="col-md-3">
                         <button class="btn btn-danger w-100 h-100" onclick="clearGraph()" disabled="true"
-                            id="clearButton" type="button">Clear</button>
+                            id="clearButton" type="button">Stop</button>
                     </div>
                 </div>
             </div>
@@ -101,20 +101,18 @@
             }
         }
         function drawDerativeLine() {
-            if (!isFinish) {
-                nextPointX = currentPointX - (fn(currentPointX) / fder(currentPointX))
-                let currentPointY = fn(currentPointX)
+            nextPointX = currentPointX - (fn(currentPointX) / fder(currentPointX))
+            let currentPointY = fn(currentPointX)
 
-                let currentPointScreenX = map(currentPointX, x1, x2, 0, width - 1);
-                let nextPointScreenX = map(nextPointX, x1, x2, 0, width - 1);
+            let currentPointScreenX = map(currentPointX, x1, x2, 0, width - 1);
+            let nextPointScreenX = map(nextPointX, x1, x2, 0, width - 1);
 
-                let currentPointScreenY = map(currentPointY, y1, y2, height - 1, 0);
-                stroke("red");
-                strokeWeight(4);
-                line(currentPointScreenX, currentPointScreenY, nextPointScreenX, axesX);
-                currentPointX = nextPointX
-                iteration += 1
-            }
+            let currentPointScreenY = map(currentPointY, y1, y2, height - 1, 0);
+            stroke("red");
+            strokeWeight(4);
+            line(currentPointScreenX, currentPointScreenY, nextPointScreenX, axesX);
+            currentPointX = nextPointX
+            iteration += 1
             $("#currentXPointLabel").text("Current X Point: " + currentPointX)
             $("#iterationCountLabel").text("Iteration Count: " + iteration)
             if (fn(currentPointX) < h) {
@@ -199,7 +197,9 @@
             if (isSetted) {
                 drawAxes();
                 drawGraph();
-                drawDerativeLine()
+                if (!isFinish) {
+                    drawDerativeLine()
+                }
             }
         }
     </script>
